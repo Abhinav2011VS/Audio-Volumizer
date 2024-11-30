@@ -1,0 +1,28 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+  }
+  
+  .audio-container {
+    text-align: center;
+  }
+  
+  .volume-control {
+    margin-top: 20px;
+  }
+  
+  #volumeSlider {
+    width: 80%;
+    margin-top: 10px;
+  }
+  
+  #volumeLabel {
+    font-weight: bold;
+    margin-left: 10px;
+  }
+  
