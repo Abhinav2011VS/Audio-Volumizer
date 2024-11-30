@@ -6,8 +6,8 @@ const volumeLabel = document.getElementById('volumeLabel');
 const downloadButton = document.getElementById('downloadButton');
 
 let audioContext, audioBuffer, audioSourceNode, gainNode, audioBlob;
+let fileType = ""; // To track the file type (MP3 or WAV)
 
-// Function to handle file upload and process the audio
 audioUpload.addEventListener('change', handleFileUpload);
 
 function handleFileUpload(event) {
@@ -16,83 +16,95 @@ function handleFileUpload(event) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const audioData = e.target.result;
-      initAudioContext(audioData);
+      fileType = file.type; // Detect the file type (MP3 or WAV)
+      if (fileType === "audio/mp3") {
+        processMp3(audioData);
+      } else {
+        initAudioContext(audioData);
+      }
     };
     reader.readAsArrayBuffer(file);
   }
 }
 
+// If the uploaded file is MP3
+function processMp3(audioData) {
+  const audioBlob = new Blob([audioData], { type: 'audio/mp3' });
+  const audioURL = URL.createObjectURL(audioBlob);
+  audio.src = audioURL;
+  audio.load();
+
+  volumeSlider.disabled = false;
+  downloadButton.disabled = false;
+}
+
+// Initialize AudioContext for WAV files or other formats
 function initAudioContext(audioData) {
-  // Initialize AudioContext
   audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  
-  // Decode audio file
+
   audioContext.decodeAudioData(audioData, (buffer) => {
     audioBuffer = buffer;
     audio.src = URL.createObjectURL(new Blob([audioData]));
     audio.load();
-    
-    // Enable volume slider and download button
+
     volumeSlider.disabled = false;
     downloadButton.disabled = false;
-    
-    // Set up the audio graph for volume control
+
     setUpAudioGraph();
   });
 }
 
 function setUpAudioGraph() {
-  // Create an audio source from the buffer
   audioSourceNode = audioContext.createBufferSource();
   audioSourceNode.buffer = audioBuffer;
-
-  // Create a gain node for volume control
   gainNode = audioContext.createGain();
   audioSourceNode.connect(gainNode);
   gainNode.connect(audioContext.destination);
-
-  // Connect the source node to the audio context
-  audioSourceNode.start(0);
   
-  // Set the initial volume based on the slider (100%)
+  audioSourceNode.start(0);
   updateVolume();
 }
 
-// Function to update volume based on slider input
 volumeSlider.addEventListener('input', updateVolume);
 
 function updateVolume() {
-  const volume = volumeSlider.value / 1000; // Normalize volume (0 to 1)
-  gainNode.gain.setValueAtTime(volume, audioContext.currentTime); // Set volume
+  const volume = volumeSlider.value / 1000;
+  gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
   volumeLabel.textContent = `${volumeSlider.value}%`;
 }
 
-// Function to create a download link for the modified audio
 downloadButton.addEventListener('click', downloadAudio);
 
 function downloadAudio() {
-  // Create a new audio buffer with the modified volume
+  if (fileType === 'audio/mp3') {
+    downloadMp3(audioUpload.files[0]);
+  } else {
+    downloadWav();
+  }
+}
+
+function downloadMp3(file) {
+  const a = document.createElement('a');
+  const url = URL.createObjectURL(file); // Generate a URL for the audio file
+  a.href = url;
+  a.download = file.name;
+  a.click();
+}
+
+function downloadWav() {
   const offlineContext = new OfflineAudioContext(audioBuffer.numberOfChannels, audioBuffer.length, audioContext.sampleRate);
   const offlineSource = offlineContext.createBufferSource();
   offlineSource.buffer = audioBuffer;
-  
-  // Connect the offline source to the gain node
   const offlineGainNode = offlineContext.createGain();
   offlineSource.connect(offlineGainNode);
   offlineGainNode.connect(offlineContext.destination);
-
-  // Set the volume on the offline gain node
   offlineGainNode.gain.setValueAtTime(gainNode.gain.value, offlineContext.currentTime);
-
-  // Render the audio
+  
   offlineSource.start();
   offlineContext.startRendering().then((renderedBuffer) => {
-    // Convert the rendered buffer to WAV or MP3 for download
     const wavData = bufferToWave(renderedBuffer);
     const blob = new Blob([wavData], { type: 'audio/wav' });
     const url = URL.createObjectURL(blob);
-
-    // Create a download link and trigger download
     const a = document.createElement('a');
     a.href = url;
     a.download = 'modified_audio.wav';
@@ -100,7 +112,6 @@ function downloadAudio() {
   });
 }
 
-// Helper function to convert audio buffer to WAV format
 function bufferToWave(buffer) {
   const numOfChannels = buffer.numberOfChannels;
   const length = buffer.length * numOfChannels * 2 + 44;
