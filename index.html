@@ -3,22 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Audio Volumizer</title>
+  <title>Audio Volume Changer</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
   <div class="audio-container">
+    <h2>Upload Audio and Adjust Volume</h2>
+    
+    <!-- File Upload -->
+    <input type="file" id="audioUpload" accept="audio/*">
+    
+    <!-- Audio Controls -->
     <audio id="audio" controls>
-      <source src="your-audio-file.mp3" type="audio/mp3">
       Your browser does not support the audio element.
     </audio>
     
+    <!-- Volume Control -->
     <div class="volume-control">
       <label for="volumeSlider">Volume: </label>
       <input type="range" id="volumeSlider" min="0" max="1000" value="100" step="1">
       <span id="volumeLabel">100%</span>
     </div>
+    
+    <!-- Download Button -->
+    <button id="downloadButton" disabled>Download Modified Audio</button>
   </div>
 
   <script src="script.js"></script>
